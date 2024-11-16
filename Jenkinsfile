@@ -16,9 +16,9 @@ pipeline {
     stage('Deploy') {
       steps {
       // Construye la imagen Docker y la ejecuta localmente
-      sh 'docker build -t myappdevops .'
-      sh 'docker run -d -p 8080:8080 myappdevops'
+      sh 'docker build -t helloworld-app .'
+      sh 'docker run -d -p 8080:8080 helloworld-app'
     }
-  }
+    }
   }
 }
