@@ -1,0 +1,44 @@
+# Base de la imagen de Jenkins
+FROM jenkins/jenkins:lts-jdk21
+
+# Cambiar al usuario root para instalar dependencias
+USER root
+
+# Actualizar el sistema e instalar Maven, Docker CLI y utilidades necesarias
+RUN apt-get update && apt-get install -y \
+  maven \
+  docker.io \
+  git \
+  curl \
+  unzip \
+  gnupg2 \
+  software-properties-common && \
+  apt-get clean
+
+# Instalar el cliente GitHub CLI
+RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg && \
+  chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg && \
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null && \
+  apt-get update && \
+  apt-get install -y gh
+
+# Instalar Docker Compose (versión específica)
+RUN curl -L "https://github.com/docker/compose/releases/download/v2.26.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && \
+  chmod +x /usr/local/bin/docker-compose
+
+# Añadir usuario Jenkins al grupo de Docker
+RUN usermod -aG docker jenkins
+
+# Configurar Maven (opcional, puedes definir valores por defecto para settings.xml)
+RUN mkdir -p /var/jenkins_home/.m2 && \
+  echo "<settings><localRepository>/var/jenkins_home/.m2/repository</localRepository></settings>" > /var/jenkins_home/.m2/settings.xml && \
+  chown -R jenkins:jenkins /var/jenkins_home/.m2
+
+# Cambiar de nuevo al usuario Jenkins
+USER jenkins
+
+# Exponer el puerto por defecto de Jenkins
+EXPOSE 8080
+
+# Declarar punto de entrada
+ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/jenkins.sh"]

@@ -27,15 +27,14 @@ pipeline {
       }
     }
 
-    stage('Docker Run') {
-      steps {
-        echo 'Desplegando el contenedor Docker...'
-        sh """
-          docker stop ${DOCKER_IMAGE} || true
-          docker rm ${DOCKER_IMAGE} || true
-          docker run -d -p 8081:8080 --name ${DOCKER_IMAGE} ${DOCKER_IMAGE}
-        """
-      }
+    stage('Deploy with Docker Compose') {
+        steps {
+            echo 'Desplegando contenedor con Docker Compose...'
+            sh '''
+            docker-compose down || true  # Apaga cualquier instancia previa
+            docker-compose up -d        # Levanta la infraestructura definida
+            '''
+        }
     }
   }
 
