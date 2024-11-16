@@ -1,24 +1,50 @@
 pipeline {
   agent any
+
+  environment {
+    DOCKER_IMAGE = 'helloworld-app' // Nombre de la imagen Docker
+  }
+
   stages {
     stage('Build') {
-        steps {
-          // Compila el proyecto Java utilizando Maven
-          sh 'mvn clean package'
-        }
+      steps {
+        echo 'Compilando el proyecto con Maven...'
+        sh 'mvn clean package'
       }
+    }
+
     stage('Test') {
       steps {
-      // Ejecuta las pruebas unitarias
-      sh 'mvn test'
+        echo 'Ejecutando pruebas unitarias con Maven...'
+        sh 'mvn test'
       }
     }
-    stage('Deploy') {
+
+    stage('Docker Build') {
       steps {
-      // Construye la imagen Docker y la ejecuta localmente
-      sh 'docker build -t helloworld-app .'
-      sh 'docker run -d -p 8080:8080 helloworld-app'
+        echo 'Construyendo la imagen Docker...'
+        sh "docker build -t ${DOCKER_IMAGE} ."
+      }
     }
+
+    stage('Docker Run') {
+      steps {
+        echo 'Desplegando el contenedor Docker...'
+        sh """
+          docker stop ${DOCKER_IMAGE} || true
+          docker rm ${DOCKER_IMAGE} || true
+          docker run -d -p 8080:8080 --name ${DOCKER_IMAGE} ${DOCKER_IMAGE}
+        """
+      }
+    }
+  }
+
+  post {
+    success {
+      echo 'Pipeline completado con éxito.'
+    }
+    failure {
+      echo 'El pipeline ha fallado. Revisa los logs para más detalles.'
     }
   }
 }
